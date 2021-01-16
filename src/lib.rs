@@ -20,7 +20,7 @@ macro_rules! faker_impl_from_file {
 
 #[macro_export]
 macro_rules! faker_impl_from_templates {
-    ($name: ident, $($fmt: expr, $($arg:ty),+);+) => {
+    ($name: ident; $($fmt: expr, $($arg:ty),+);+;) => {
         impl rand::distributions::Distribution<$name> for rand::distributions::Standard {
             fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> $name {
                 use rand::seq::SliceRandom;
@@ -116,38 +116,38 @@ pub mod lorem {
 
     struct FirstWord(String);
     faker_impl_from_templates! {
-        FirstWord,
+        FirstWord;
 
-        "{}", CapitalizeFirstLetter<Word>
+        "{}", CapitalizeFirstLetter<Word>;
     }
 
     pub struct Sentence(String);
     faker_impl_from_templates! {
-        Sentence,
+        Sentence;
 
         "{} {} {}.", FirstWord, Word, Word;
         "{} {} {} {}.", FirstWord, Word, Word, Word;
         "{} {} {} {} {}.", FirstWord, Word, Word, Word, Word;
         "{} {} {} {} {} {}.", FirstWord, Word, Word, Word, Word, Word;
-        "{} {} {} {} {} {} {}.", FirstWord, Word, Word, Word, Word, Word, Word
+        "{} {} {} {} {} {} {}.", FirstWord, Word, Word, Word, Word, Word, Word;
     }
 
     pub struct Paragraph(String);
     faker_impl_from_templates! {
-        Paragraph,
+        Paragraph;
 
         "{} {} {}", Sentence, Sentence, Sentence;
         "{} {} {} {}", Sentence, Sentence, Sentence, Sentence;
-        "{} {} {} {} {}", Sentence, Sentence, Sentence, Sentence, Sentence
+        "{} {} {} {} {}", Sentence, Sentence, Sentence, Sentence, Sentence;
     }
 
     pub struct Paragraphs(String);
     faker_impl_from_templates! {
-        Paragraphs,
+        Paragraphs;
 
         "{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph;
         "{}\n{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph, Paragraph;
-        "{}\n{}\n{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph, Paragraph, Paragraph
+        "{}\n{}\n{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph, Paragraph, Paragraph;
     }
 
     #[cfg(test)]
@@ -180,12 +180,12 @@ pub mod en_us {
         /// A full name.
         pub struct FullName(String);
         faker_impl_from_templates! {
-            FullName,
+            FullName;
 
             "{} {}", FirstName, LastName;
             "{} {} {}", NamePrefix, FirstName, LastName;
             "{} {} {}", FirstName, LastName, NameSuffix;
-            "{} {} {} {}", NamePrefix, FirstName, LastName, NameSuffix
+            "{} {} {} {}", NamePrefix, FirstName, LastName, NameSuffix;
         }
     }
 
@@ -201,12 +201,12 @@ pub mod en_us {
 
         pub struct CityName(String);
         faker_impl_from_templates! {
-            CityName,
+            CityName;
 
             "{} {}{}", CityPrefix, FirstName, CitySuffix;
             "{} {}", CityPrefix, FirstName;
             "{}{}", FirstName, CitySuffix;
-            "{}{}", LastName, CitySuffix
+            "{}{}", LastName, CitySuffix;
         }
 
         struct StreetSuffix(String);
@@ -214,34 +214,34 @@ pub mod en_us {
 
         pub struct StreetName(String);
         faker_impl_from_templates! {
-            StreetName,
+            StreetName;
 
             "{} {}", FirstName, StreetSuffix;
-            "{} {}", LastName, StreetSuffix
+            "{} {}", LastName, StreetSuffix;
         }
 
         struct BuildingNumber(String);
         faker_impl_from_templates! {
-            BuildingNumber,
+            BuildingNumber;
 
             "{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
             "{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
-            "{}{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit
+            "{}{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
         pub struct StreetAddress(String);
         faker_impl_from_templates! {
-            StreetAddress,
+            StreetAddress;
 
-            "{} {}", BuildingNumber, StreetName
+            "{} {}", BuildingNumber, StreetName;
         }
 
         pub struct SecondaryAddress(String);
         faker_impl_from_templates! {
-            SecondaryAddress,
+            SecondaryAddress;
 
             "Apt. {}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
-            "Suite {}{}{}", AsciiDigit, AsciiDigit, AsciiDigit
+            "Suite {}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
         pub struct Division(String);
@@ -252,18 +252,18 @@ pub mod en_us {
 
         pub struct PostalCode(String);
         faker_impl_from_templates! {
-            PostalCode,
+            PostalCode;
 
             "{}{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
-            "{}{}{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit
+            "{}{}{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
         pub struct Address(String);
         faker_impl_from_templates! {
-            Address,
+            Address;
 
             "{}\n{}\n{}, {} {}\n", FullName, StreetAddress, CityName, DivisionAbbreviation, PostalCode;
-            "{}\n{} {}\n{}, {} {}\n", FullName, StreetAddress, SecondaryAddress, CityName, DivisionAbbreviation, PostalCode
+            "{}\n{} {}\n{}, {} {}\n", FullName, StreetAddress, SecondaryAddress, CityName, DivisionAbbreviation, PostalCode;
         }
     }
 
@@ -275,11 +275,11 @@ pub mod en_us {
 
         pub struct CompanyName(String);
         faker_impl_from_templates! {
-            CompanyName,
+            CompanyName;
 
             "{} {}", FirstName, CompanySuffix;
             "{}-{}", LastName, LastName;
-            "{}, {}, and {}", LastName, LastName, LastName
+            "{}, {}, and {}", LastName, LastName, LastName;
         }
 
         struct SloganAdjective(String);
@@ -293,9 +293,9 @@ pub mod en_us {
 
         pub struct Slogan(String);
         faker_impl_from_templates! {
-            Slogan,
+            Slogan;
 
-            "{} {} {}", SloganAdjective, SloganDescriptor, SloganNouns
+            "{} {} {}", SloganAdjective, SloganDescriptor, SloganNouns;
         }
     }
 
@@ -305,9 +305,9 @@ pub mod en_us {
 
         struct DomainWord(String);
         faker_impl_from_templates! {
-            DomainWord,
+            DomainWord;
 
-            "{}", ToAsciiLowercase<LastName>
+            "{}", ToAsciiLowercase<LastName>;
         }
 
         struct DomainTLD(String);
@@ -315,26 +315,26 @@ pub mod en_us {
 
         pub struct Domain(String);
         faker_impl_from_templates! {
-            Domain,
+            Domain;
 
-            "{}.{}", DomainWord, DomainTLD
+            "{}.{}", DomainWord, DomainTLD;
         }
 
         pub struct Username(String);
         faker_impl_from_templates! {
-            Username,
+            Username;
 
             "{}{}", AsciiLowercase, ToAsciiLowercase<LastName>;
             "{}{}{}", AsciiLowercase, ToAsciiLowercase<LastName>, AsciiDigit;
             "{}{}{}{}", AsciiLowercase, ToAsciiLowercase<LastName>, AsciiDigit, AsciiDigit;
-            "{}{}", ToAsciiLowercase<FirstName>, ToAsciiLowercase<LastName>
+            "{}{}", ToAsciiLowercase<FirstName>, ToAsciiLowercase<LastName>;
         }
 
         pub struct Email(String);
         faker_impl_from_templates! {
-            Email,
+            Email;
 
-            "{}@{}", Username, Domain
+            "{}@{}", Username, Domain;
         }
     }
 
@@ -343,9 +343,9 @@ pub mod en_us {
 
         pub struct PhoneNumber(String);
         faker_impl_from_templates! {
-            PhoneNumber,
+            PhoneNumber;
 
-            "{}{}{}-{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit
+            "{}{}{}-{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
     }
 }
