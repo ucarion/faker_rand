@@ -1,3 +1,33 @@
+/// Create a generator implementation from a file containing a list of words.
+///
+/// The first argument to the macro must be the name of type to create an
+/// implementation for. Said type must be a newtype whose first member must be a
+/// [`String`]. The second argument must be a string literal, a path to the file
+/// containing the list of words.
+///
+/// The macro will generate a
+/// [`Distribution`][`rand::distributions::Distribution`] and
+/// [`Display`][`std::fmt::Display`] implementation for the type.
+///
+/// Each line of the given file, whose contents will be loaded using
+/// [`std::include_str`], will be used as a possible value to return when the
+/// generator is sampled.
+///
+/// ```
+/// use faker_rand::faker_impl_from_file;
+///
+/// // First, declare your newtype wrapper around String.
+/// struct Demo(String);
+///
+/// // Then, use the macro. data/lorem_words is a path to a file containing
+/// // example words; you will need to change this path to suit your needs.
+/// faker_impl_from_file!(Demo, "data/lorem_words");
+///
+/// use rand::{Rng, SeedableRng};
+/// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+///
+/// assert_eq!("impedit", rng.gen::<Demo>().to_string());
+/// ```
 #[macro_export]
 macro_rules! faker_impl_from_file {
     ($name: ident, $file: expr) => {
@@ -14,10 +44,63 @@ macro_rules! faker_impl_from_file {
             }
         }
 
-        display_impl_for_wrapper!($name);
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
     };
 }
 
+/// Create a generator implementation from a set of format strings and
+/// sub-generators.
+///
+/// The first argument to the macro must be the name of type to create an
+/// implementation for. Said type must be a newtype whose first member must be a
+/// [`String`]. The first argument must be followed by a semicolon.
+///
+/// After the first argument, the macro accepts a semicolon-separated sequence
+/// of template patterns. A template pattern is a comma-separated sequence
+/// starting with a [`std::format`]-compatible string literal, followed by a
+/// sequence of generator type names. The `{}`s in the string literal will be
+/// replaced by sampled data from each of the given generators.
+///
+/// The macro will generate a
+/// [`Distribution`][`rand::distributions::Distribution`] and
+/// [`Display`][`std::fmt::Display`] implementation for the type.
+///
+/// If multiple template patterns are given, the created implementation will, on
+/// each invocation, choose from one of them with equal likelihood. To bias
+/// generation in favor of one template pattern over another, you can provide
+/// the same template pattern multiple times.
+///
+/// ```
+/// use faker_rand::faker_impl_from_templates;
+///
+/// // First, declare your newtype wrapper around String.
+/// struct Demo(String);
+///
+/// // Then, invoke the macro.
+/// //
+/// // Note well: all commas and semicolons in this example, even trailing
+/// // semicolons, are strictly required.
+/// faker_impl_from_templates! {
+///     // The type we're creating a generator implementation for.
+///     Demo;
+///
+///     // The template patterns.
+///     "{}.{}", faker_rand::util::AsciiDigit, faker_rand::lorem::Word;
+///     "{} ~~~ {}", faker_rand::lorem::Word, faker_rand::util::AsciiDigit;
+/// }
+///
+/// use rand::{Rng, SeedableRng};
+/// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+///
+/// assert_eq!("qui ~~~ 5", rng.gen::<Demo>().to_string());
+/// assert_eq!("debitis ~~~ 5", rng.gen::<Demo>().to_string());
+/// assert_eq!("5.aliquid", rng.gen::<Demo>().to_string());
+/// assert_eq!("0.doloribus", rng.gen::<Demo>().to_string());
+/// ```
 #[macro_export]
 macro_rules! faker_impl_from_templates {
     ($name: ident; $($fmt: expr, $($arg:ty),+);+;) => {
@@ -38,18 +121,12 @@ macro_rules! faker_impl_from_templates {
             }
         }
 
-        display_impl_for_wrapper!($name);
-    }
-}
-
-macro_rules! display_impl_for_wrapper {
-    ($name: ident) => {
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", self.0)
             }
         }
-    };
+    }
 }
 
 /// Utility generators that can be used as building blocks for larger
