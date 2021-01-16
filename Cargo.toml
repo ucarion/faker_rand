@@ -7,3 +7,6 @@ edition = "2018"
 [dependencies]
 rand = "0.8"
 lazy_static = "1"
+
+[dev-dependencies]
+rand_chacha = "0.3"

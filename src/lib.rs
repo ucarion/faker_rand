@@ -52,10 +52,30 @@ macro_rules! display_impl_for_wrapper {
     };
 }
 
+/// Utility generators that can be used as building blocks for larger
+/// generators.
 pub mod util {
+    /// Generates an ASCII decimal digit (0-9).
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::util::AsciiDigit;
+    /// assert_eq!("7", rng.gen::<AsciiDigit>().to_string());
+    /// ```
     pub struct AsciiDigit(String);
     faker_impl_from_file!(AsciiDigit, "data/ascii_digit");
 
+    /// Generates an ASCII lowercase letter (a-z).
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::util::AsciiLowercase;
+    /// assert_eq!("s", rng.gen::<AsciiLowercase>().to_string());
+    /// ```
     pub struct AsciiLowercase(String);
     faker_impl_from_file!(AsciiLowercase, "data/ascii_lowercase");
 
@@ -64,6 +84,24 @@ pub mod util {
     use std::fmt;
     use std::marker::PhantomData;
 
+    /// Wraps a string generator so that its output is all ASCII lowercase
+    /// letters (a-z).
+    ///
+    /// Any character that can't be lowercased to ASCII lowercase is stripped
+    /// from the output.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// // FirstName generates strings whose first letter is capitalized ...
+    /// use faker_rand::en_us::names::FirstName;
+    /// assert_eq!("Melvin", rng.gen::<FirstName>().to_string());
+    ///
+    /// // ... But with ToAsciiLowercase, it's lowercased.
+    /// use faker_rand::util::ToAsciiLowercase;
+    /// assert_eq!("jamey", rng.gen::<ToAsciiLowercase<FirstName>>().to_string());
+    /// ```
     pub struct ToAsciiLowercase<T>(String, PhantomData<T>);
 
     impl<T: ToString> Distribution<ToAsciiLowercase<T>> for Standard
@@ -84,6 +122,21 @@ pub mod util {
         }
     }
 
+    /// Wraps a string generator so that the first letter of its output is
+    /// capitalized.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// // Word generates strings that are all lowercase ...
+    /// use faker_rand::lorem::Word;
+    /// assert_eq!("impedit", rng.gen::<Word>().to_string());
+    ///
+    /// // ... But with CapitalizeFirstLetter, the first letter is capitalized.
+    /// use faker_rand::util::CapitalizeFirstLetter;
+    /// assert_eq!("Totam", rng.gen::<CapitalizeFirstLetter<Word>>().to_string());
+    /// ```
     pub struct CapitalizeFirstLetter<T>(String, PhantomData<T>);
 
     impl<T: ToString> Distribution<CapitalizeFirstLetter<T>> for Standard
@@ -108,9 +161,19 @@ pub mod util {
     }
 }
 
+/// Generators for "lorem ipsum" placeholder text.
 pub mod lorem {
     use crate::util::CapitalizeFirstLetter;
 
+    /// Generates a lorem ipsum word.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::lorem::Word;
+    /// assert_eq!("impedit", rng.gen::<Word>().to_string());
+    /// ```
     pub struct Word(String);
     faker_impl_from_file!(Word, "data/lorem_words");
 
@@ -121,6 +184,18 @@ pub mod lorem {
         "{}", CapitalizeFirstLetter<Word>;
     }
 
+    /// Generates a lorem ipsum sentence.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::lorem::Sentence;
+    /// assert_eq!(
+    ///     "Cumque debitis unde eum recusandae aut.",
+    ///     rng.gen::<Sentence>().to_string()
+    /// );
+    /// ```
     pub struct Sentence(String);
     faker_impl_from_templates! {
         Sentence;
@@ -132,6 +207,18 @@ pub mod lorem {
         "{} {} {} {} {} {} {}.", FirstWord, Word, Word, Word, Word, Word, Word;
     }
 
+    /// Generates a lorem ipsum paragraph.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::lorem::Paragraph;
+    /// assert_eq!(
+    ///     "Debitis unde eum recusandae aut. Aut assumenda cupiditate aliquid voluptas facilis consectetur. Repellendus quae perspiciatis asperiores impedit. Voluptate dolorem in autem et. Consequatur iusto corrupti eum cupiditate.",
+    ///     rng.gen::<Paragraph>().to_string()
+    /// );
+    /// ```
     pub struct Paragraph(String);
     faker_impl_from_templates! {
         Paragraph;
@@ -141,6 +228,18 @@ pub mod lorem {
         "{} {} {} {} {}", Sentence, Sentence, Sentence, Sentence, Sentence;
     }
 
+    /// Generates multiple lorem ipsum paragraphs.
+    ///
+    /// ```
+    /// use rand::{Rng, SeedableRng};
+    /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+    ///
+    /// use faker_rand::lorem::Paragraphs;
+    /// assert_eq!(
+    ///     "Debitis unde eum recusandae aut. Aut assumenda cupiditate aliquid voluptas facilis consectetur. Repellendus quae perspiciatis asperiores impedit. Voluptate dolorem in autem et. Consequatur iusto corrupti eum cupiditate.\nDignissimos sit cupiditate vitae. Ex quidem odio quia nam. Doloribus reiciendis dignissimos in cum ad reprehenderit.\nEt error illum. Animi voluptatem quo temporibus velit consequatur. Ipsa corrupti cupiditate in et.\nSapiente molestiae sed. Ipsa voluptas rerum laborum. Sed natus et eum officiis ut. Ut voluptatem sint consequatur fuga explicabo asperiores. Aliquam vero quia cupiditate exercitationem blanditiis ea.\nMinima incidunt velit provident voluptate odio. Eius sequi unde voluptas qui. Possimus aut optio et. Consequuntur soluta aut dicta eos amet rerum. Eveniet corporis repudiandae aspernatur.\n",
+    ///     rng.gen::<Paragraphs>().to_string()
+    /// );
+    /// ```
     pub struct Paragraphs(String);
     faker_impl_from_templates! {
         Paragraphs;
@@ -149,35 +248,70 @@ pub mod lorem {
         "{}\n{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph, Paragraph;
         "{}\n{}\n{}\n{}\n{}\n", Paragraph, Paragraph, Paragraph, Paragraph, Paragraph;
     }
-
-    #[cfg(test)]
-    mod tests {
-        #[test]
-        fn sample_name() {
-            for _ in 0..100 {
-                println!("{}", rand::random::<super::Paragraphs>().to_string());
-            }
-
-            panic!();
-        }
-    }
 }
 
+/// Localized generators for American English (`en-US`).
 pub mod en_us {
+    /// Generators for the names of individuals (e.g., first, last, or full
+    /// names).
     pub mod names {
+        /// Generates a first name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::names::FirstName;
+        /// assert_eq!("Melvin", rng.gen::<FirstName>().to_string());
+        /// ```
         pub struct FirstName(String);
         faker_impl_from_file!(FirstName, "data/en_us/first_names");
 
+        /// Generates a last name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::names::LastName;
+        /// assert_eq!("Quitzon", rng.gen::<LastName>().to_string());
+        /// ```
         pub struct LastName(String);
         faker_impl_from_file!(LastName, "data/en_us/last_names");
 
+        /// Generates a name prefix.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::names::NamePrefix;
+        /// assert_eq!("Miss", rng.gen::<NamePrefix>().to_string());
+        /// ```
         pub struct NamePrefix(String);
         faker_impl_from_file!(NamePrefix, "data/en_us/name_prefixes");
 
+        /// Generates a name suffix.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::names::NameSuffix;
+        /// assert_eq!("IV", rng.gen::<NameSuffix>().to_string());
+        /// ```
         pub struct NameSuffix(String);
         faker_impl_from_file!(NameSuffix, "data/en_us/name_suffixes");
 
-        /// A full name.
+        /// Generates a full name, including possibly a prefix, suffix, or both.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::names::FullName;
+        /// assert_eq!("Cleta McClure III", rng.gen::<FullName>().to_string());
+        /// ```
         pub struct FullName(String);
         faker_impl_from_templates! {
             FullName;
@@ -189,6 +323,8 @@ pub mod en_us {
         }
     }
 
+    /// Generators for postal addresses and their constituent parts (e.g. city
+    /// names, postal codes, etc.).
     pub mod addresses {
         use super::names::{FirstName, FullName, LastName};
         use crate::util::AsciiDigit;
@@ -199,6 +335,15 @@ pub mod en_us {
         struct CitySuffix(String);
         faker_impl_from_file!(CitySuffix, "data/en_us/city_suffixes");
 
+        /// Generates a city name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::CityName;
+        /// assert_eq!("Cletastad", rng.gen::<CityName>().to_string());
+        /// ```
         pub struct CityName(String);
         faker_impl_from_templates! {
             CityName;
@@ -212,6 +357,15 @@ pub mod en_us {
         struct StreetSuffix(String);
         faker_impl_from_file!(StreetSuffix, "data/en_us/street_suffixes");
 
+        /// Generates a street name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::StreetName;
+        /// assert_eq!("Renner Mission", rng.gen::<StreetName>().to_string());
+        /// ```
         pub struct StreetName(String);
         faker_impl_from_templates! {
             StreetName;
@@ -229,6 +383,15 @@ pub mod en_us {
             "{}{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
+        /// Generates a street address.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::StreetAddress;
+        /// assert_eq!("5489 Shanie Springs", rng.gen::<StreetAddress>().to_string());
+        /// ```
         pub struct StreetAddress(String);
         faker_impl_from_templates! {
             StreetAddress;
@@ -236,6 +399,15 @@ pub mod en_us {
             "{} {}", BuildingNumber, StreetName;
         }
 
+        /// Generates a secondary address (e.g. an apartment number).
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::SecondaryAddress;
+        /// assert_eq!("Suite 755", rng.gen::<SecondaryAddress>().to_string());
+        /// ```
         pub struct SecondaryAddress(String);
         faker_impl_from_templates! {
             SecondaryAddress;
@@ -244,12 +416,49 @@ pub mod en_us {
             "Suite {}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
+        /// Generates a first-level administrative division (e.g. one of the 50
+        /// states).
+        ///
+        /// Currently, other top-level divisions in USA, such as the District of
+        /// Columbia or the unincorporated organized territories (e.g. Puerto
+        /// Rico), are not included in this list. This may be changed in a
+        /// future minor version of this crate.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::Division;
+        /// assert_eq!("Oklahoma", rng.gen::<Division>().to_string());
+        /// ```
         pub struct Division(String);
         faker_impl_from_file!(Division, "data/en_us/divisions");
 
+        /// Generates an abbreviated first-level division (e.g. the two-letter
+        /// abbreviation for one of the 50 states).
+        ///
+        /// See note in [`Division`] on the inclusion of entities other than the
+        /// 50 states, and how this may change in a minor version of this crate.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::DivisionAbbreviation;
+        /// assert_eq!("OK", rng.gen::<DivisionAbbreviation>().to_string());
+        /// ```
         pub struct DivisionAbbreviation(String);
         faker_impl_from_file!(DivisionAbbreviation, "data/en_us/division_abbreviations");
 
+        /// Generates a postal code (a.k.a. a ZIP Code).
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::PostalCode;
+        /// assert_eq!("75548-9960", rng.gen::<PostalCode>().to_string());
+        /// ```
         pub struct PostalCode(String);
         faker_impl_from_templates! {
             PostalCode;
@@ -258,6 +467,18 @@ pub mod en_us {
             "{}{}{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
 
+        /// Generates a full postal address.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::addresses::Address;
+        /// assert_eq!(
+        ///     "Cleta McClure III\n15364 Marks Passage Apt. 057\nMargaritaborough, MA 91404\n",
+        ///     rng.gen::<Address>().to_string()
+        /// );
+        /// ```
         pub struct Address(String);
         faker_impl_from_templates! {
             Address;
@@ -267,12 +488,22 @@ pub mod en_us {
         }
     }
 
+    /// Generators for companies names and slogans.
     pub mod company {
         use super::names::{FirstName, LastName};
 
         struct CompanySuffix(String);
         faker_impl_from_file!(CompanySuffix, "data/en_us/company_suffixes");
 
+        /// Generates a company name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::company::CompanyName;
+        /// assert_eq!("Konopelski, Price, and Beier", rng.gen::<CompanyName>().to_string());
+        /// ```
         pub struct CompanyName(String);
         faker_impl_from_templates! {
             CompanyName;
@@ -291,6 +522,15 @@ pub mod en_us {
         struct SloganNouns(String);
         faker_impl_from_file!(SloganNouns, "data/en_us/slogan_nouns");
 
+        /// Generates a company slogan.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::company::Slogan;
+        /// assert_eq!("Business-focused intermediate applications", rng.gen::<Slogan>().to_string());
+        /// ```
         pub struct Slogan(String);
         faker_impl_from_templates! {
             Slogan;
@@ -299,6 +539,7 @@ pub mod en_us {
         }
     }
 
+    /// Generators for internet domain names, usernames, and emails.
     pub mod internet {
         use super::names::{FirstName, LastName};
         use crate::util::{AsciiDigit, AsciiLowercase, ToAsciiLowercase};
@@ -313,6 +554,15 @@ pub mod en_us {
         struct DomainTLD(String);
         faker_impl_from_file!(DomainTLD, "data/en_us/domain_tlds");
 
+        /// Generates a domain name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::internet::Domain;
+        /// assert_eq!("thiel.name", rng.gen::<Domain>().to_string());
+        /// ```
         pub struct Domain(String);
         faker_impl_from_templates! {
             Domain;
@@ -320,6 +570,15 @@ pub mod en_us {
             "{}.{}", DomainWord, DomainTLD;
         }
 
+        /// Generates a username.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::internet::Username;
+        /// assert_eq!("odietrich48", rng.gen::<Username>().to_string());
+        /// ```
         pub struct Username(String);
         faker_impl_from_templates! {
             Username;
@@ -330,6 +589,15 @@ pub mod en_us {
             "{}{}", ToAsciiLowercase<FirstName>, ToAsciiLowercase<LastName>;
         }
 
+        /// Generates an email.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::internet::Email;
+        /// assert_eq!("odietrich48@thompson.net", rng.gen::<Email>().to_string());
+        /// ```
         pub struct Email(String);
         faker_impl_from_templates! {
             Email;
@@ -338,14 +606,24 @@ pub mod en_us {
         }
     }
 
+    /// Generators for phone numbers.
     pub mod phones {
         use crate::util::AsciiDigit;
 
+        /// Generates a phone number.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::en_us::phones::PhoneNumber;
+        /// assert_eq!("(058) 981-5364", rng.gen::<PhoneNumber>().to_string());
+        /// ```
         pub struct PhoneNumber(String);
         faker_impl_from_templates! {
             PhoneNumber;
 
-            "{}{}{}-{}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
+            "({}{}{}) {}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
     }
 }
