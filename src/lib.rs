@@ -109,7 +109,7 @@ pub mod util {
         Standard: Distribution<T>,
     {
         fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> ToAsciiLowercase<T> {
-            let mut s = rng.gen::<T>().to_string().to_lowercase();
+            let mut s = deunicode::deunicode(&rng.gen::<T>().to_string()).to_lowercase();
             s.retain(|c| c.is_ascii_lowercase());
 
             ToAsciiLowercase(s, std::marker::PhantomData)
@@ -250,7 +250,7 @@ pub mod lorem {
     }
 }
 
-/// Localized generators for American English (`en-US`).
+/// Localized generators for English as spoken in the United States (`en-US`).
 pub mod en_us {
     /// Generators for the names of individuals (e.g., first, last, or full
     /// names).
@@ -488,7 +488,7 @@ pub mod en_us {
         }
     }
 
-    /// Generators for companies names and slogans.
+    /// Generators for company names and slogans.
     pub mod company {
         use super::names::{FirstName, LastName};
 
@@ -624,6 +624,317 @@ pub mod en_us {
             PhoneNumber;
 
             "({}{}{}) {}{}{}-{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
+        }
+    }
+}
+
+/// Localized generators for French as spoken in France (`fr-FR`).
+pub mod fr_fr {
+    /// Generators for the names of individuals (e.g., first, last, or full
+    /// names).
+    pub mod names {
+        /// Generates a first name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::names::FirstName;
+        /// assert_eq!("Mahaut", rng.gen::<FirstName>().to_string());
+        /// ```
+        pub struct FirstName(String);
+        faker_impl_from_file!(FirstName, "data/fr_fr/first_names");
+
+        /// Generates a last name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::names::LastName;
+        /// assert_eq!("GUILLOT", rng.gen::<LastName>().to_string());
+        /// ```
+        pub struct LastName(String);
+        faker_impl_from_file!(LastName, "data/fr_fr/last_names");
+
+        /// Generates a name prefix.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::names::NamePrefix;
+        /// assert_eq!("Dr", rng.gen::<NamePrefix>().to_string());
+        /// ```
+        pub struct NamePrefix(String);
+        faker_impl_from_file!(NamePrefix, "data/fr_fr/name_prefixes");
+
+        /// Generates a full name, including possibly a prefix.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::names::FullName;
+        /// assert_eq!("Mlle Gisèle MARTINEZ", rng.gen::<FullName>().to_string());
+        /// ```
+        pub struct FullName(String);
+        faker_impl_from_templates! {
+            FullName;
+
+            "{} {}", FirstName, LastName;
+            "{} {} {}", NamePrefix, FirstName, LastName;
+        }
+    }
+
+    /// Generators for postal addresses and their constituent parts (e.g. city
+    /// names, postal codes, etc.).
+    pub mod addresses {
+        use super::names::FullName;
+        use crate::util::AsciiDigit;
+
+        /// Generates a city name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::CityName;
+        /// assert_eq!("Levallois-Perret", rng.gen::<CityName>().to_string());
+        /// ```
+        pub struct CityName(String);
+        faker_impl_from_file!(CityName, "data/fr_fr/city_names");
+
+        struct StreetPrefix(String);
+        faker_impl_from_file!(StreetPrefix, "data/fr_fr/street_prefixes");
+
+        struct StreetSuffix(String);
+        faker_impl_from_file!(StreetSuffix, "data/fr_fr/street_suffixes");
+
+        /// Generates a street name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::StreetName;
+        /// assert_eq!("Passage de Seine", rng.gen::<StreetName>().to_string());
+        /// ```
+        pub struct StreetName(String);
+        faker_impl_from_templates! {
+            StreetName;
+
+            "{} {}", StreetPrefix, StreetSuffix;
+        }
+
+        struct BuildingNumber(String);
+        faker_impl_from_templates! {
+            BuildingNumber;
+
+            "{}", AsciiDigit;
+            "{}{}", AsciiDigit, AsciiDigit;
+            "{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
+        }
+
+        /// Generates a street address.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::StreetAddress;
+        /// assert_eq!("54 Place de Montmorency", rng.gen::<StreetAddress>().to_string());
+        /// ```
+        pub struct StreetAddress(String);
+        faker_impl_from_templates! {
+            StreetAddress;
+
+            "{} {}", BuildingNumber, StreetName;
+        }
+
+        /// Generates a secondary address (e.g. an apartment number).
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::SecondaryAddress;
+        /// assert_eq!("7 étage", rng.gen::<SecondaryAddress>().to_string());
+        /// ```
+        pub struct SecondaryAddress(String);
+        faker_impl_from_templates! {
+            SecondaryAddress;
+
+            "Apt. {}{}{}", AsciiDigit, AsciiDigit, AsciiDigit;
+            "{} étage", AsciiDigit;
+        }
+
+        /// Generates a first-level administrative division (e.g. one of the
+        /// *régions* of France).
+        ///
+        /// Currently, this will generate only one of the 13 metropolitan
+        /// regions of France. This may be changed in a future minor version of
+        /// this crate.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::Division;
+        /// assert_eq!("Nouvelle-Aquitaine", rng.gen::<Division>().to_string());
+        /// ```
+        pub struct Division(String);
+        faker_impl_from_file!(Division, "data/fr_fr/divisions");
+
+        /// Generates a postal code.
+        ///
+        /// No guarantee is made that the first two digits correspond to a
+        /// correct department.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::PostalCode;
+        /// assert_eq!("05898", rng.gen::<PostalCode>().to_string());
+        /// ```
+        pub struct PostalCode(String);
+        faker_impl_from_templates! {
+            PostalCode;
+
+            "{}{}{}{}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
+        }
+
+        /// Generates a full postal address.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::addresses::Address;
+        /// assert_eq!(
+        ///     "Mlle Lucille MOREAU\nApt. 489\n96 Quai Saint-Jacques\n05764 Saint-Nazaire\nFRANCE\n",
+        ///     rng.gen::<Address>().to_string()
+        /// );
+        /// ```
+        pub struct Address(String);
+        faker_impl_from_templates! {
+            Address;
+
+            "{}\n{}\n{} {}\nFRANCE\n", FullName, StreetAddress, PostalCode, CityName;
+            "{}\n{}\n{}\n{} {}\nFRANCE\n", FullName, SecondaryAddress, StreetAddress, PostalCode, CityName;
+        }
+    }
+
+    /// Generators for company names.
+    pub mod company {
+        use super::names::FirstName;
+
+        struct CompanySuffix(String);
+        faker_impl_from_file!(CompanySuffix, "data/fr_fr/company_suffixes");
+
+        /// Generates a company name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::company::CompanyName;
+        /// assert_eq!("Lucille SARL", rng.gen::<CompanyName>().to_string());
+        /// ```
+        pub struct CompanyName(String);
+        faker_impl_from_templates! {
+            CompanyName;
+
+            "{} {}", FirstName, CompanySuffix;
+        }
+    }
+
+    /// Generators for internet domain names, usernames, and emails.
+    pub mod internet {
+        use super::names::{FirstName, LastName};
+        use crate::util::{AsciiDigit, AsciiLowercase, ToAsciiLowercase};
+
+        struct DomainWord(String);
+        faker_impl_from_templates! {
+            DomainWord;
+
+            "{}", ToAsciiLowercase<LastName>;
+        }
+
+        struct DomainTLD(String);
+        faker_impl_from_file!(DomainTLD, "data/fr_fr/domain_tlds");
+
+        /// Generates a domain name.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::internet::Domain;
+        /// assert_eq!("renard.net", rng.gen::<Domain>().to_string());
+        /// ```
+        pub struct Domain(String);
+        faker_impl_from_templates! {
+            Domain;
+
+            "{}.{}", DomainWord, DomainTLD;
+        }
+
+        /// Generates a username.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::internet::Username;
+        /// assert_eq!("omartinez48", rng.gen::<Username>().to_string());
+        /// ```
+        pub struct Username(String);
+        faker_impl_from_templates! {
+            Username;
+
+            "{}{}", AsciiLowercase, ToAsciiLowercase<LastName>;
+            "{}{}{}", AsciiLowercase, ToAsciiLowercase<LastName>, AsciiDigit;
+            "{}{}{}{}", AsciiLowercase, ToAsciiLowercase<LastName>, AsciiDigit, AsciiDigit;
+            "{}{}", ToAsciiLowercase<FirstName>, ToAsciiLowercase<LastName>;
+        }
+
+        /// Generates an email.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::internet::Email;
+        /// assert_eq!("omartinez48@poirier.net", rng.gen::<Email>().to_string());
+        /// ```
+        pub struct Email(String);
+        faker_impl_from_templates! {
+            Email;
+
+            "{}@{}", Username, Domain;
+        }
+    }
+
+    /// Generators for phone numbers.
+    pub mod phones {
+        use crate::util::AsciiDigit;
+
+        /// Generates a phone number.
+        ///
+        /// ```
+        /// use rand::{Rng, SeedableRng};
+        /// let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+        ///
+        /// use faker_rand::fr_fr::phones::PhoneNumber;
+        /// assert_eq!("00 58 98 15 36", rng.gen::<PhoneNumber>().to_string());
+        /// ```
+        pub struct PhoneNumber(String);
+        faker_impl_from_templates! {
+            PhoneNumber;
+
+            "0{} {}{} {}{} {}{} {}{}", AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit, AsciiDigit;
         }
     }
 }
