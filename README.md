@@ -13,28 +13,6 @@ You can use `faker_rand` in your Rust project by adding the following to your
 faker_rand = "0.1"
 ```
 
-## Prior Art
-
-If you're considering using this crate, please be aware of prior art in this
-space. The most widely-used alternative to this crate is
-[`fake`](https://crates.io/crates/fake).
-
-`faker_rand` was created because the author needed types that specifically
-implemented `rand`'s `Distribution` trait (to take advantage of blanket
-`Distribution` implementations). `fake` instead uses a custom `Faker` trait, and
-drives its own calls to `rand`, whereas `faker_rand` has `rand` call into it.
-
-Further, `faker_rand` provides macros for creating custom data fakers, making it
-easier to create one-off data generators without having to write much code.
-
-Finally, `faker_rand` has fewer moving parts (`faker_rand` exposes no new traits
-or functions, only types that implement existing traits), making it easier to
-understand and document.
-
-The biggest shortcoming to this crate as opposed to `fake` is that `fake` has
-more data generators than `faker_rand`. If there is a data generator you'd like
-in `faker_rand` that is not currently available, please open an issue on GitHub!
-
 ## Usage
 
 See [the docs on docs.rs for more details](https://docs.rs/faker_rand), but at a
@@ -105,3 +83,27 @@ assert_eq!("0.doloribus", rng.gen::<Demo>().to_string());
 Most of the documentation for this crate lives in the Rust docs, not this
 README. Check out https://docs.rs/faker_rand for copy-pastable examples you can
 use.
+
+## Prior Art
+
+If you're considering using this crate, please be aware of prior art in this
+space. The most widely-used alternative to this crate is
+[`fake`](https://crates.io/crates/fake).
+
+`faker_rand` was created because the author needed:
+
+1. Types that specifically implemented `rand`'s `Distribution` trait (to take
+   advantage of blanket `Distribution` implementations). `fake` instead uses a
+   custom `Faker` trait, and drives its own calls to `rand`, whereas
+   `faker_rand` has `rand` call into it.
+
+2. Macros for creating custom data fakers, making it easier to create one-off
+   data generators without having to write much code.
+
+3. Something with few moving parts (`faker_rand` exposes no new traits or
+   functions, only types that implement existing traits), so that generators are
+   consistent to use and document.
+
+The biggest shortcoming to this crate as opposed to `fake` is that `fake` has
+more data generators than `faker_rand`. If there is a data generator you'd like
+in `faker_rand` that is not currently available, please open an issue on GitHub!
