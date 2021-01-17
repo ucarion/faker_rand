@@ -1,6 +1,6 @@
 [package]
 name = "faker_rand"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ulysse Carion <ulysse@segment.com>"]
 edition = "2018"
 license = "MIT"
