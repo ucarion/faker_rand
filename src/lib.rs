@@ -1,3 +1,172 @@
+//! Seedable, `rand`-compatible generators of fake data.
+//!
+//! `faker_rand` provides types that you can use with the popular [`rand`] crate
+//! in order to generate human-friendly fake data, such as lorem ipsum text,
+//! first/last names, email addresses, and more.
+//!
+//! If `faker_rand` doesn't have what you need out of the box, you can build
+//! your own generators too. See ["Creating your own
+//! generators"](#creating-your-own-generators) below. Alternatively, consider
+//! opening a feature request on GitHub!
+//!
+//! # Quick start
+//!
+//! This crate provides types, called "generators" in this documentation, that
+//! you can pass to `rand`'s random data generation functions, like
+//! [`rand::random`] or [`rand::Rng::gen`].
+//!
+//! ```
+//! use rand::Rng;
+//! use faker_rand::en_us::names::FirstName;
+//!
+//! // you can display generators using "{}"
+//! println!("random first name: {}", rand::random::<FirstName>());
+//! println!("random first name: {}", rand::thread_rng().gen::<FirstName>());
+//!
+//! // or, you can use to_string as well
+//! let name = rand::random::<FirstName>().to_string();
+//! println!("random first name: {}", name);
+//! ```
+//!
+//! Crucially, this crate's generators work with seedable, deterministic PRNGs.
+//! This means you can get deterministic results automatically, as long as you
+//! use a deterministic [`rand::Rng`] to generate the data:
+//!
+//! ```
+//! use rand::{Rng, SeedableRng};
+//! use faker_rand::en_us::names::{FirstName, LastName};
+//!
+//! // ChaCha8Rng is a deterministic RNG, assuming you give it a fixed seed
+//! let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+//!
+//! // This output is deterministic. Unlike the previous examples (which used a
+//! // global, randomly-seeded RNG), we will get the same result here each time.
+//! assert_eq!("Melvin", rng.gen::<FirstName>().to_string());
+//! assert_eq!("Jamey", rng.gen::<FirstName>().to_string());
+//! assert_eq!("Price", rng.gen::<LastName>().to_string());
+//!
+//! // As a demonstration of the deterministic behavior, let's reset rng back to
+//! // its initial state. We'll get back the same generated data the second time
+//! // around.
+//! let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+//! assert_eq!("Melvin", rng.gen::<FirstName>().to_string());
+//! assert_eq!("Jamey", rng.gen::<FirstName>().to_string());
+//! assert_eq!("Price", rng.gen::<LastName>().to_string());
+//! ```
+//!
+//! # How it works
+//!
+//! What this crate calls a "generator" is just a type that wraps [`String`] and
+//! implements both [`std::fmt::Display`] and
+//! [`rand::distributions::Distribution`].
+//!
+//! Implementing [`rand::distributions::Distribution`] makes a type compatible
+//! with [`rand::random`] or [`rand::Rng::gen`]. Implementing
+//! [`std::fmt::Display`] makes a type easy to print or convert into a
+//! [`String`].
+//!
+//! Under the hood, almost all of the types exposed by this crate are just
+//! "newtype" wrappers around [`String`] (e.g. `struct Foo(String)`). It's
+//! expected that most users of this crate will never pass around instances of
+//! generators; instead, it's more common to pass a generator type as a type
+//! parameter to [`rand::Rng::gen`], and then immediately convert the result to
+//! a [`String`].
+//!
+//! # Creating your own generators
+//!
+//! In addition to the base set of generators in this crate, `faker_rand`
+//! provides a set of macros to make implementing generators quick and easy. The
+//! two most common patterns for writing generators are to either:
+//!
+//! 1. Have the generator randomly choose from a more or less hardcoded list of
+//!    words.
+//!
+//!    For example, the list of common American first names is fixed in advance,
+//!    and a generator for first names would randomly choose an element from
+//!    that list.
+//!
+//! 2. Have the generator call `format!` with a template string and the result
+//!    of sub-generators.
+//!
+//!    For example, the generator for a full name would want to randomly
+//!    generate a first and a last name, and then put a space between them,
+//!    something like: `format!("{} {}", gen_first_name(), gen_last_name())`.
+//!
+//! This crate provides [`faker_impl_from_file`] to support the first pattern,
+//! and [`faker_impl_from_templates`] to support the second pattern. See the
+//! documentation for those macros for specifics on how to use them.
+//!
+//! ## Advanced generators
+//!
+//! Some generators need more advanced behavior than what
+//! [`faker_impl_from_file`] or [`faker_impl_from_templates`] can provide.
+//! Sometimes, you need to write your own
+//! [`Distribution`][`rand::distributions::Distribution`] impl by hand. Here's
+//! how you can write these advanced generators, while keeping them compatible
+//! with the macros provided by this crate.
+//!
+//! As an example of an advanced generator, let's imagine you want to make a
+//! generator that will take a sub-generator, and convert the sub-generator's
+//! result to lowercase. You can't do this with `format!`, so
+//! [`faker_impl_from_templates`] can't solve this for you. Instead, you'll have
+//! to write your own code.
+//!
+//! The recommended pattern to writing such generators is to create a newtype
+//! that wraps `String` and `PhantomData<T>`, where `T` will be the
+//! sub-generator you're wrapping. Then, you can implement your wrapper with
+//! code along the lines of:
+//!
+//! ```
+//! use std::fmt;
+//! use std::marker::PhantomData;
+//! use rand::Rng;
+//! use rand::distributions::{Distribution, Standard};
+//!
+//! // Lowercase will take what T generates, and convert it to lowercase.
+//! struct Lowercase<T>(String, PhantomData<T>);
+//!
+//! impl<T: ToString> Distribution<Lowercase<T>> for Standard
+//! where
+//!     Standard: Distribution<T>,
+//! {
+//!     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Lowercase<T> {
+//!         Lowercase(rng.gen::<T>().to_string().to_lowercase(), PhantomData)
+//!     }
+//! }
+//!
+//! impl<T: ToString> fmt::Display for Lowercase<T> {
+//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//!         write!(f, "{}", self.0)
+//!     }
+//! }
+//!
+//! use faker_rand::faker_impl_from_templates;
+//! use faker_rand::en_us::addresses::CityName;
+//! use faker_rand::en_us::names::FullName;
+//!
+//! // As an example, let's use Lowercase to build a generator that takes a
+//! // city name and a full name, lowercases them, and concatenates the results.
+//! struct Demo(String);
+//! faker_impl_from_templates! {
+//!     Demo;
+//!
+//!     "{} {}", Lowercase<CityName>, Lowercase<FullName>;
+//! }
+//!
+//! use rand::SeedableRng;
+//! let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
+//!
+//! // you can use Demo as your own custom generator now!
+//! assert_eq!("cletastad shanie russel dds", rng.gen::<Demo>().to_string());
+//! assert_eq!("robinmouth pablo bayer", rng.gen::<Demo>().to_string());
+//! assert_eq!("west gregory trevor cronin", rng.gen::<Demo>().to_string());
+//! ```
+//!
+//! This pattern is used within this crate to make utility generators like
+//! [`util::ToAsciiLowercase`] or [`util::CapitalizeFirstLetter`]. If you've
+//! created a generator that you feel could be useful to others, please consider
+//! opening a pull request to add it to this crate!
+
 /// Create a generator implementation from a file containing a list of words.
 ///
 /// The first argument to the macro must be the name of type to create an
