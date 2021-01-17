@@ -3,6 +3,10 @@ name = "faker_rand"
 version = "0.1.0"
 authors = ["Ulysse Carion <ulysse@segment.com>"]
 edition = "2018"
+license = "MIT"
+description = "Fake data generators for lorem ipsum, names, emails, and more"
+repository = "https://github.com/ucarion/faker_rand"
+keywords = ["rand", "fake", "data"]
 
 [dependencies]
 rand = "0.8"
